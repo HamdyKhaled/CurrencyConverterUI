@@ -1,15 +1,22 @@
 import { useEffect, useState } from 'react';
-import { getLatestRates } from '../services/ratesService';
+import { getLatestRates, getSupportedCurrencies } from '../services/ratesService';
 import type { LatestRatesResponse } from '../types/api';
 
-const BASE_OPTIONS = ['EUR', 'USD', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF'];
+const FALLBACK_BASE_OPTIONS = ['EUR', 'USD', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF'];
 
 export default function RatesPage() {
   const [base, setBase] = useState('EUR');
+  const [baseOptions, setBaseOptions] = useState<string[]>(FALLBACK_BASE_OPTIONS);
   const [data, setData] = useState<LatestRatesResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    getSupportedCurrencies()
+      .then(setBaseOptions)
+      .catch(() => setBaseOptions(FALLBACK_BASE_OPTIONS));
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -43,7 +50,7 @@ export default function RatesPage() {
               onChange={(e) => setBase(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
             >
-              {BASE_OPTIONS.map((c) => (
+              {baseOptions.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>

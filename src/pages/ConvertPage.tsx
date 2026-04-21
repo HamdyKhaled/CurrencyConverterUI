@@ -1,20 +1,28 @@
-import { useState, type FormEvent } from 'react';
-import { convertCurrency } from '../services/ratesService';
+import { useState, useEffect, type FormEvent } from 'react';
+import { convertCurrency, getSupportedCurrencies } from '../services/ratesService';
 import type { ConvertResponse, ApiError } from '../types/api';
 
-const CURRENCIES = [
-  'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF', 'CNY', 'SEK', 'NZD',
-  'KRW', 'SGD', 'NOK', 'INR', 'BRL', 'ZAR', 'HKD', 'DKK', 'CZK', 'HUF',
-  'ILS', 'MYR', 'PHP', 'RON', 'IDR', 'ISK', 'BGN', 'HRK',
+const FALLBACK_CURRENCIES = [
+  'AUD', 'BGN', 'BRL', 'CAD', 'CHF', 'CNY', 'CZK', 'DKK',
+  'EUR', 'GBP', 'HKD', 'HRK', 'HUF', 'IDR', 'ILS', 'INR',
+  'ISK', 'JPY', 'KRW', 'MYR', 'NOK', 'NZD', 'PHP', 'RON',
+  'SEK', 'SGD', 'USD', 'ZAR',
 ];
 
 export default function ConvertPage() {
+  const [currencies, setCurrencies] = useState<string[]>(FALLBACK_CURRENCIES);
   const [amount, setAmount] = useState('1');
   const [from, setFrom] = useState('USD');
   const [to, setTo] = useState('EUR');
   const [result, setResult] = useState<ConvertResponse | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    getSupportedCurrencies()
+      .then(setCurrencies)
+      .catch(() => setCurrencies(FALLBACK_CURRENCIES));
+  }, []);
 
   function swap() {
     setFrom(to);
@@ -26,6 +34,10 @@ export default function ConvertPage() {
     e.preventDefault();
     setError('');
     setResult(null);
+    if (from === to) {
+      setError('"From" and "To" currencies must be different.');
+      return;
+    }
     setLoading(true);
     try {
       const data = await convertCurrency({
@@ -87,7 +99,7 @@ export default function ConvertPage() {
               onChange={(e) => setFrom(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
             >
-              {CURRENCIES.map((c) => (
+              {currencies.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
@@ -113,7 +125,7 @@ export default function ConvertPage() {
               onChange={(e) => setTo(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
             >
-              {CURRENCIES.map((c) => (
+              {currencies.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>

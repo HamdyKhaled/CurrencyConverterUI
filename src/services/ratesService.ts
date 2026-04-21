@@ -10,6 +10,16 @@ export function getLatestRates(base = 'EUR') {
   return api.get<LatestRatesResponse>(`/rates/latest?base_=${base}`);
 }
 
+const BLOCKED_CURRENCIES = ['TRY', 'PLN', 'THB', 'MXN'];
+
+export async function getSupportedCurrencies(): Promise<string[]> {
+  const data = await getLatestRates('EUR');
+  const all = [data.base, ...Object.keys(data.rates)];
+  return all
+    .filter((c) => !BLOCKED_CURRENCIES.includes(c))
+    .sort();
+}
+
 export function convertCurrency(req: ConvertRequest) {
   return api.post<ConvertResponse>('/rates/convert', req);
 }

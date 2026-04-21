@@ -1,11 +1,12 @@
-import { useState, type FormEvent } from 'react';
-import { getHistory } from '../services/ratesService';
+import { useState, useEffect, type FormEvent } from 'react';
+import { getHistory, getSupportedCurrencies } from '../services/ratesService';
 import type { HistoricalRatesResponse } from '../types/api';
 
-const BASE_OPTIONS = ['EUR', 'USD', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF'];
+const FALLBACK_BASE_OPTIONS = ['EUR', 'USD', 'GBP', 'JPY', 'AUD', 'CAD', 'CHF'];
 
 export default function HistoryPage() {
   const [base, setBase] = useState('EUR');
+  const [baseOptions, setBaseOptions] = useState<string[]>(FALLBACK_BASE_OPTIONS);
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [page, setPage] = useState(1);
@@ -13,6 +14,12 @@ export default function HistoryPage() {
   const [data, setData] = useState<HistoricalRatesResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    getSupportedCurrencies()
+      .then(setBaseOptions)
+      .catch(() => setBaseOptions(FALLBACK_BASE_OPTIONS));
+  }, []);
 
   async function fetchData(p = page) {
     if (!start || !end) return;
@@ -22,8 +29,20 @@ export default function HistoryPage() {
       const result = await getHistory(base, start, end, p, pageSize);
       setData(result);
       setPage(p);
-    } catch {
-      setError('Failed to fetch historical rates');
+    } catch (err: unknown) {
+      if (
+        err &&
+        typeof err === 'object' &&
+        'errors' in err &&
+        Array.isArray((err as { errors: unknown[] }).errors)
+      ) {
+        const messages = (err as { errors: { message: string }[] }).errors
+          .map((e) => e.message)
+          .join(' ');
+        setError(messages);
+      } else {
+        setError('Failed to fetch historical rates');
+      }
     } finally {
       setLoading(false);
     }
@@ -31,6 +50,10 @@ export default function HistoryPage() {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (end < start) {
+      setError('End date must not be earlier than start date.');
+      return;
+    }
     fetchData(1);
   }
 
@@ -52,7 +75,7 @@ export default function HistoryPage() {
               onChange={(e) => setBase(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
             >
-              {BASE_OPTIONS.map((c) => (
+              {baseOptions.map((c) => (
                 <option key={c} value={c}>
                   {c}
                 </option>
