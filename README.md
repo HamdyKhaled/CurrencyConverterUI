@@ -135,3 +135,26 @@ Example steps for a GitHub Actions pipeline:
   run: npm run build
 ```
 
+---
+
+## AI Usage
+
+### Where AI Helped
+1. Initial project scaffolding (Vite + React + TypeScript + Tailwind setup)
+2. Generating boilerplate page components (`ConvertPage`, `RatesPage`, `HistoryPage`, `LoginPage`)
+3. Writing unit/component test templates using Vitest + Testing Library
+4. Suggesting `apiClient.ts` structure with centralized JWT injection and 401 handling
+5. Implementing error surfacing (extracting FluentValidation messages from API error responses)
+
+### What Was Validated Manually
+1. Correct JWT flow — token storage, attachment to requests, redirect on expiry
+2. Role-based route protection via `ProtectedRoute` component
+3. UI/UX decisions — layout, form behaviour, pagination controls
+4. Restricted currency filtering logic aligned with backend constants
+5. Date validation logic (end date ≥ start date) on both frontend and backend
+
+### What Was NOT Accepted Blindly
+1. Replaced hardcoded `BASE_OPTIONS` / `CURRENCIES` arrays with dynamic loading via `getSupportedCurrencies()` — AI initially suggested static lists
+2. Added proper error extraction from backend `{ errors: [{field, message}] }` shape instead of generic catch messages
+3. Added same-currency validation on conversion (`from !== to`) not present in initial scaffold
+4. Ensured fallback lists are used only when the API is unavailable, not as primary data source
